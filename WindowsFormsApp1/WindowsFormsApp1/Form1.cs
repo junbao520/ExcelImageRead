@@ -25,111 +25,70 @@ namespace WindowsFormsApp1
         private void button1_Click(object sender, EventArgs e)
         {
             NPOI.SS.UserModel.ISheet sheet = null;//工作表
-            var fs = new FileStream("data.xlsx", FileMode.Open, FileAccess.Read);
-             var workbook = new XSSFWorkbook(fs);
-            sheet = workbook.GetSheet("微淘笔记猜你喜欢");
-            var list = sheet.GetAllPictureInfos();
-            var data = ExcelToDataTable(sheet);
-            int index = 0;
-
-            list = list.Distinct().ToList();
-            List<PicturesInfo> lst = new List<PicturesInfo>();
-           for(int i = 0; i < list.Count; i++)
+            var fs = new FileStream(txtExcelName.Text, FileMode.Open, FileAccess.Read);
+            var workbook = new XSSFWorkbook(fs);
+            for(int i = 0; i <Convert.ToInt32( txtNumber.Text); i++)
             {
-                list[i].PictureData = null;
-            }
+                sheet = workbook.GetSheetAt(i);
+               
+                var list = sheet.GetAllPictureInfos();
+                var data = ExcelToDataTable(sheet);
+                int index = 0;
 
-            list = list.Distinct().ToList();
-           var list1= list.Select(s => s.MinRow).ToList();
-
-            List<string> lstname = new List<string>();
-
-
-            //foreach (var item in list)
-            //{
-            //    if (lst.Where(s=>s.MinRow==item.MinRow).Count()==0)
-            //    {
-            //        lst.Add(item);
-            //    }
-            //    else
-            //    {
-
-            //    }
-
-            //}
-
-
-
-            //var res = list.Select(s => s.MinRow+s.MinCol).Distinct().ToList();
-
-            //List<string> lstname = new List<string>();
-            //foreach (DataRow info in data.Rows)
-            //{
-            //    try
-            //    {
-            //        index++;
-            //        var PictureData = list.Where(s => s.MinRow.ToString() == info.ItemArray[1].ToString()).FirstOrDefault().PictureData;
-            //       // var info = data.Rows[row - 1];
-            //        var name = info.ItemArray[1].ToString() + info.ItemArray[2].ToString() + info.ItemArray[9].ToString() + info.ItemArray[10].ToString() + ".png";
-            //        //单品序号+品牌+渠道+达人账号这样命名
-            //        name = name.Replace("/", "");
-            //        lstname.Add(name);
-            //        writePic(PictureData, name);
-            //    }
-            //    catch (Exception)
-            //    {
-
-            //        continue;
-            //    }
-            //}
-
-
-        
-            foreach (var item in list)
-            {
-                try
+                var FilePath = DateTime.Now.ToString("yyyyMMdd") + sheet.SheetName;
+                if (!System.IO.Directory.Exists(FilePath))
                 {
-                    index++;
-                    int row = item.MinRow;
-                    var info = data.Rows[row - 1];
-                    var name = info.ItemArray[1].ToString() + info.ItemArray[2].ToString() + info.ItemArray[9].ToString() + info.ItemArray[10].ToString()+"_"+index.ToString() + ".png";
-                    //单品序号+品牌+渠道+达人账号这样命名
-                    name = name.Replace("/", "");
-                    lstname.Add(name);
-                    writePic(item.PictureData, name);
-                }
-                catch (Exception)
-                {
-
-                    continue;
-                }
-
-            }
-            //重名的怎么处理
-            List<string> lsttemp = new List<string>();
-
-            foreach (var item in lstname)
-            {
-                if (!lsttemp.Contains(item))
-                {
-                    lsttemp.Add(item);
+                    //创建pic文件夹
+                    System.IO.Directory.CreateDirectory(FilePath);
                 }
                 else
                 {
+                    System.IO.Directory.Delete(FilePath, true);
+                    System.IO.Directory.CreateDirectory(FilePath);
+                }
+
+                foreach (var item in list)
+                {
+                   
+                    try
+                    {
+                        index++;
+                        int row = item.MinRow;
+                        var info = data.Rows[row - 1];
+                        var name = ""; ;
+                        for(var j = 0; j < Convert.ToInt32(txtColCount.Text); j++)
+                        {
+                            name += info.ItemArray[j].ToString();
+                        }
+                        name+= "_" + index.ToString() + ".png";
+                        //var name = info.ItemArray[0].ToString() + info.ItemArray[1].ToString() + info.ItemArray[2].ToString() + info.ItemArray[3].ToString() + info.ItemArray[4].ToString() + "_" + index.ToString() + ".png";
+                        //单品序号+品牌+渠道+达人账号这样命名
+                        name = name.Replace("/", "");
+                        writePic(item.PictureData, name, FilePath);
+                    }
+                    catch (Exception)
+                    {
+
+                        continue;
+                    }
 
                 }
+                //重名的怎么处理
             }
-            var res2 = lstname.GroupBy(x => x).ToList();
-            lstname = lstname.Distinct().ToList();
-           
-            MessageBox.Show("OK");
+
+
+
+
+            MessageBox.Show("读取完成");
         
 
         }
-        public void writePic(byte[] data,string name)
+        public void writePic(byte[] data,string name,string FilePath)
         {
-            MemoryStream ms = new MemoryStream(data); 
-            FileStream fs = new FileStream(string.Format("pic/{0}",name),FileMode.Create);
+          
+            MemoryStream ms = new MemoryStream(data);
+          
+            FileStream fs = new FileStream(string.Format("{0}/{1}", FilePath, name),FileMode.Create);
             ms.WriteTo(fs);
             ms.Close();
             fs.Close();
